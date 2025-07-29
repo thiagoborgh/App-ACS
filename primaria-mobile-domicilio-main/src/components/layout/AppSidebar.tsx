@@ -20,6 +20,7 @@ import ChatbotIA from '@/components/ui/ChatbotIA';
 const menuItems = [
   { title: 'Início', url: '/', icon: Home },
   { title: 'Informações do usuário', url: '/user-info', icon: User },
+  { title: 'Planejamento de Roteiro', url: '/planejamento-roteiro', icon: FileText },
   { title: 'Sincronização', url: '/sync', icon: RefreshCw },
   { title: 'Atualização de dados', url: '/data-update', icon: RefreshCw },
   { title: 'Sobre', url: '/about', icon: Info },

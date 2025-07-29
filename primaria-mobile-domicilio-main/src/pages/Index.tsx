@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Home, User, FileHeart, Users, Building, Activity, Calendar, Plus, Bell, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
+import ChatbotACS from '@/components/ui/ChatbotACS';
 
 const Index = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
+  // Inserir o botão I.A30 entre Indivíduos e Visitas
   const mainModules = [
     {
       title: 'Domicílios',
@@ -24,6 +26,14 @@ const Index = () => {
       icon: User,
       gradient: 'bg-gradient-to-br from-accent to-accent/80',
       action: () => navigate('/cadastro-individual')
+    },
+    {
+      title: 'I.A30',
+      subtitle: 'Assistente Inteligente',
+      icon: null,
+      gradient: 'bg-gradient-to-br from-purple-600 to-blue-600',
+      action: () => setShowChatbot(true),
+      isIA: true
     },
     {
       title: 'Visitas',
@@ -68,16 +78,19 @@ const Index = () => {
     }
   ];
 
+  const [showChatbot, setShowChatbot] = useState(false);
   if (!isMobile) {
-    // Desktop layout (existing functionality)
+    // Desktop layout (novo: botão I.A30 no grid, padrão dos outros)
     return (
       <div className="min-h-screen bg-background p-6">
+        {showChatbot && (
+          <ChatbotACS open={showChatbot} onOpenChange={setShowChatbot} />
+        )}
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Painel Principal</h1>
             <p className="text-muted-foreground">Gestão de atenção primária à saúde</p>
           </div>
-          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {dashboardStats.map((stat, index) => (
               <Card key={index} className="shadow-soft">
@@ -96,16 +109,23 @@ const Index = () => {
               </Card>
             ))}
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             {mainModules.map((module, index) => (
-              <Card key={index} className="cursor-pointer hover:shadow-elegant transition-all duration-300 hover:-translate-y-1" onClick={module.action}>
-                <CardContent className="p-6 text-center">
-                  <div className={`w-16 h-16 ${module.gradient} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-soft`}>
-                    <module.icon className="w-8 h-8 text-white" />
+              <Card key={index} className="cursor-pointer hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 min-w-[120px]" onClick={module.action}>
+                <CardContent className="p-3 text-center">
+                  <div className={`w-10 h-10 ${module.gradient} rounded-xl flex items-center justify-center mx-auto mb-2 shadow-soft`}>
+                    {module.isIA ? (
+                      <span className="text-white text-base font-bold">I.A</span>
+                    ) : (
+                      module.icon && module.title === 'Indivíduos' ? (
+                        <module.icon className="w-5 h-5 text-[#2563eb] bg-white rounded-full p-0.5" />
+                      ) : (
+                        module.icon && <module.icon className="w-5 h-5 text-white" />
+                      )
+                    )}
                   </div>
-                  <h3 className="font-semibold text-foreground mb-1">{module.title}</h3>
-                  <p className="text-sm text-muted-foreground">{module.subtitle}</p>
+                  <h3 className="font-semibold text-foreground mb-0.5 text-xs leading-tight">{module.title}</h3>
+                  <p className="text-[11px] text-muted-foreground leading-tight">{module.subtitle}</p>
                 </CardContent>
               </Card>
             ))}
@@ -193,9 +213,13 @@ const Index = () => {
         </div>
       </div>
 
+      {/* ChatbotIA modal para mobile */}
+      {showChatbot && (
+        <ChatbotACS open={showChatbot} onOpenChange={setShowChatbot} />
+      )}
       {/* Mobile Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-2 safe-area-inset-bottom">
-        <div className="flex justify-around">
+        <div className="flex justify-around items-center">
           <Button variant="ghost" size="sm" className="flex-col h-auto py-2">
             <Home className="w-5 h-5 mb-1" />
             <span className="text-xs">Início</span>
@@ -203,6 +227,15 @@ const Index = () => {
           <Button variant="ghost" size="sm" className="flex-col h-auto py-2" onClick={() => navigate('/cadastro-individual')}>
             <Plus className="w-5 h-5 mb-1" />
             <span className="text-xs">Cadastrar</span>
+          </Button>
+          {/* Botão I.A30 entre Cadastrar e Visitas */}
+          <Button
+            onClick={() => setShowChatbot(true)}
+            className="bg-gradient-to-br from-purple-600 to-blue-600 text-white rounded-full shadow-lg hover:scale-105 transition-all w-14 h-14 flex items-center justify-center border-4 border-blue-400 text-base font-bold mx-1"
+            style={{ fontWeight: 700, fontSize: 16 }}
+            title="Abrir I.A30"
+          >
+            I.A30
           </Button>
           <Button variant="ghost" size="sm" className="flex-col h-auto py-2" onClick={() => navigate('/visitas')}>
             <FileHeart className="w-5 h-5 mb-1" />

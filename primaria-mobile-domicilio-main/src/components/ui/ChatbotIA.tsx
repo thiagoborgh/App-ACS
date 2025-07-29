@@ -1,3 +1,11 @@
+// --- DEBUG: Forçar permissão de visitas ativa para teste ---
+try {
+  const permissoes = JSON.parse(localStorage.getItem('permissoesUsuario') || '{}');
+  if (!permissoes.visitas) {
+    permissoes.visitas = true;
+    localStorage.setItem('permissoesUsuario', JSON.stringify(permissoes));
+  }
+} catch {}
   // Processa mensagem fora do fluxo guiado, simulando o envio e resposta do bot
   function processarMensagem(msg: string) {
   console.log('[DEBUG] processarMensagem chamada com:', msg);
@@ -168,7 +176,9 @@ export default function ChatbotIA(props: ChatbotIAProps = {}) {
     if (!isOpen) {
       if (fluxo && fluxo.conversaId && conversations[activeIdx]?.id === fluxo.conversaId) {
         adicionarMensagemBot('Cadastro cancelado.');
-        setFluxo(null);
+  // Auditoria de qualidade após visita
+  auditarVisita(novaResposta, 'cidadao');
+  setFluxo(null);
         setInput('');
       }
     }
@@ -188,12 +198,73 @@ export default function ChatbotIA(props: ChatbotIAProps = {}) {
     }
     if (fluxo.tipo === 'cidadao' || !fluxo.tipo) {
       const etapaAtual = etapasCidadao[fluxo.etapa];
-      const novaResposta = { ...fluxo.respostas, [etapaAtual.key]: value.trim() };
-      if (etapaAtual.obrigatorio && !value.trim()) {
-        adicionarMensagemBot('Este campo é obrigatório. ' + etapaAtual.pergunta);
+      let erro = '';
+      const val = value.trim();
+      // Validações específicas por campo
+      if (etapaAtual.key === 'nome') {
+        if (!val || val.length < 3 || /\d/.test(val)) erro = 'Nome deve ter pelo menos 3 letras e não pode conter números.';
+      }
+      if (etapaAtual.key === 'cpf' && val) {
+        // Validação de CPF
+        function validarCPF(cpf: string) {
+          cpf = cpf.replace(/\D/g, '');
+          if (cpf.length !== 11 || /^([0-9])\1+$/.test(cpf)) return false;
+          let soma = 0, resto;
+          for (let i = 1; i <= 9; i++) soma += parseInt(cpf.substring(i-1, i)) * (11 - i);
+          resto = (soma * 10) % 11;
+          if (resto === 10 || resto === 11) resto = 0;
+          if (resto !== parseInt(cpf.substring(9, 10))) return false;
+          soma = 0;
+          for (let i = 1; i <= 10; i++) soma += parseInt(cpf.substring(i-1, i)) * (12 - i);
+          resto = (soma * 10) % 11;
+          if (resto === 10 || resto === 11) resto = 0;
+          if (resto !== parseInt(cpf.substring(10, 11))) return false;
+          return true;
+        }
+        if (!validarCPF(val)) erro = 'CPF inválido.';
+      }
+      if (etapaAtual.key === 'dataNascimento') {
+        // Aceita dd/mm/aaaa ou aaaa-mm-dd
+        function validarData(dt: string) {
+          let d, m, a;
+          if (/^\d{2}\/\d{2}\/\d{4}$/.test(dt)) {
+            [d, m, a] = dt.split('/').map(Number);
+          } else if (/^\d{4}-\d{2}-\d{2}$/.test(dt)) {
+            [a, m, d] = dt.split('-').map(Number);
+          } else return false;
+          const data = new Date(a, m-1, d);
+          if (data.getFullYear() !== a || data.getMonth() !== m-1 || data.getDate() !== d) return false;
+          if (data > new Date()) return false;
+          return true;
+        }
+        if (!val || !validarData(val)) erro = 'Data de nascimento inválida ou futura. Use dd/mm/aaaa.';
+      }
+      if (etapaAtual.key === 'sexo') {
+        if (!['masculino','feminino','outro','m','f','o'].includes(val.toLowerCase())) erro = 'Sexo deve ser Masculino, Feminino ou Outro.';
+      }
+      if (etapaAtual.key === 'nomeMae') {
+        if (!val || val.length < 3) erro = 'Nome da mãe deve ter pelo menos 3 letras.';
+      }
+      if (etapaAtual.key === 'cns' && val) {
+        // Validação CNS (15 dígitos e regra)
+        function validarCNS(cns: string) {
+          if (!/^[1-2]\d{10}00[0-1]\d{2}$/.test(cns) && !/^[7-9]\d{14}$/.test(cns)) return false;
+          let soma = 0;
+          for (let i = 0; i < 15; i++) soma += parseInt(cns[i]) * (15 - i);
+          return soma % 11 === 0;
+        }
+        if (!validarCNS(val)) erro = 'CNS inválido.';
+      }
+      if (etapaAtual.key === 'endereco') {
+        if (!val || val.length < 5) erro = 'Endereço deve ter pelo menos 5 caracteres.';
+      }
+      if (etapaAtual.obrigatorio && !val) erro = 'Este campo é obrigatório. ' + etapaAtual.pergunta;
+      if (erro) {
+        adicionarMensagemBot(erro);
         setInput('');
         return;
       }
+      const novaResposta = { ...fluxo.respostas, [etapaAtual.key]: val };
       if (fluxo.etapa < etapasCidadao.length - 1) {
         setFluxo({ etapa: fluxo.etapa + 1, respostas: novaResposta, tipo: 'cidadao' });
         adicionarMensagemUser(value);
@@ -202,19 +273,37 @@ export default function ChatbotIA(props: ChatbotIAProps = {}) {
         adicionarMensagemUser(value);
         adicionarMensagemBot('Cadastro de cidadão concluído! Dados salvos localmente.');
         salvarCadastroLocal(novaResposta);
-        setFluxo(null);
+  // Auditoria de qualidade após visita
+  auditarVisita(novaResposta, 'familia');
+  setFluxo(null);
       }
       setInput('');
       return;
     }
     if (fluxo.tipo === 'rua') {
       const etapaAtual = etapasRua[fluxo.etapa];
-      const novaResposta = { ...fluxo.respostas, [etapaAtual.key]: value.trim() };
-      if (etapaAtual.obrigatorio && !value.trim()) {
-        adicionarMensagemBot('Este campo é obrigatório. ' + etapaAtual.pergunta);
+      let erro = '';
+      const val = value.trim();
+      // Validações específicas por campo
+      if (etapaAtual.key === 'nomeRua') {
+        if (!val || val.length < 3) erro = 'Nome da rua deve ter pelo menos 3 caracteres.';
+      }
+      if (etapaAtual.key === 'bairro') {
+        if (!val || val.length < 3) erro = 'Bairro deve ter pelo menos 3 caracteres.';
+      }
+      if (etapaAtual.key === 'cep' && val) {
+        if (!/^\d{5}-?\d{3}$/.test(val)) erro = 'CEP deve ter 8 dígitos (ex: 12345-678).';
+      }
+      if (etapaAtual.key === 'tipoLogradouro') {
+        if (!val || val.length < 3) erro = 'Tipo de logradouro deve ter pelo menos 3 caracteres.';
+      }
+      if (etapaAtual.obrigatorio && !val) erro = 'Este campo é obrigatório. ' + etapaAtual.pergunta;
+      if (erro) {
+        adicionarMensagemBot(erro);
         setInput('');
         return;
       }
+      const novaResposta = { ...fluxo.respostas, [etapaAtual.key]: val };
       if (fluxo.etapa < etapasRua.length - 1) {
         setFluxo({ etapa: fluxo.etapa + 1, respostas: novaResposta, tipo: 'rua' });
         adicionarMensagemUser(value);
@@ -223,11 +312,364 @@ export default function ChatbotIA(props: ChatbotIAProps = {}) {
         adicionarMensagemUser(value);
         adicionarMensagemBot('Cadastro de rua concluído! Dados salvos localmente.');
         salvarRuaLocal(novaResposta);
+  // Auditoria de qualidade após visita
+  auditarVisita(novaResposta, 'imovel');
+  setFluxo(null);
+// Módulo de auditoria para monitoramento de qualidade
+function auditarVisita(respostas: Record<string, string>, tipo: 'cidadao' | 'familia' | 'imovel') {
+  let alertas: string[] = [];
+  if (tipo === 'cidadao') {
+    if (!respostas.motivo || respostas.motivo.length < 3) {
+      alertas.push('Atenção: Visita concluída sem registro de motivo. Revisar preenchimento.');
+    }
+    if (!respostas.condicoesSaude || respostas.condicoesSaude.length < 3) {
+      alertas.push('Atenção: Condições de saúde não registradas.');
+    }
+    if (respostas.gestante && respostas.gestante.toLowerCase() === 'sim' && (!respostas.acompanhamento || respostas.acompanhamento.length < 3)) {
+      alertas.push('Atenção: Gestante sem acompanhamento registrado.');
+    }
+  }
+  if (tipo === 'familia') {
+    if (!respostas.motivo || respostas.motivo.length < 3) {
+      alertas.push('Atenção: Visita à família sem motivo registrado.');
+    }
+    if (respostas.gestante && respostas.gestante.toLowerCase() === 'sim' && (!respostas.acompProfissional || respostas.acompProfissional.length < 3)) {
+      alertas.push('Atenção: Gestante na família sem acompanhamento profissional registrado.');
+    }
+  }
+  if (tipo === 'imovel') {
+    if (!respostas.motivo || respostas.motivo.length < 3) {
+      alertas.push('Atenção: Visita ao imóvel sem motivo registrado.');
+    }
+  }
+  if (alertas.length > 0) {
+    alertas.forEach(msg => adicionarMensagemBot(msg));
+  }
+}
+      }
+      setInput('');
+      return;
+    }
+    // Checagem de permissão para visitas
+    function permissoesAtivas() {
+      try {
+        return JSON.parse(localStorage.getItem('permissoesUsuario') || '{}');
+      } catch { return {}; }
+    }
+
+    // Fluxo visita cidadão
+    if (fluxo.tipo === 'visitaCidadao') {
+      const permissoes = permissoesAtivas();
+      if (!permissoes.visitas) {
+        adicionarMensagemBot('Você não tem permissão para registrar visitas. Ative a permissão em seu perfil.');
+        setFluxo(null);
+        setInput('');
+        return;
+      }
+      const etapaAtual = etapasVisitaCidadao[fluxo.etapa];
+      let erro = '';
+      const val = value.trim();
+      if (etapaAtual.key === 'cidadao') {
+        if (!val || val.length < 3) erro = 'Selecione ou informe o nome do cidadão corretamente.';
+      }
+      if (etapaAtual.key === 'visitaRealizada') {
+        if (!['sim','não','nao','s','n'].includes(val.toLowerCase())) erro = 'Responda "Sim" ou "Não".';
+      }
+      if (etapaAtual.key === 'motivo') {
+        if (!val || val.length < 3) erro = 'Informe o motivo da visita.';
+      }
+      if (etapaAtual.key === 'concluir') {
+        if (!['sim','s'].includes(val.toLowerCase())) erro = 'Digite "Sim" para concluir a visita.';
+      }
+      if (etapaAtual.obrigatorio && !val) erro = 'Este campo é obrigatório. ' + etapaAtual.pergunta;
+      if (erro) {
+        adicionarMensagemBot(erro);
+        setInput('');
+        return;
+      }
+      const novaResposta = { ...fluxo.respostas, [etapaAtual.key]: val };
+      if (fluxo.etapa < etapasVisitaCidadao.length - 1) {
+        setFluxo({ etapa: fluxo.etapa + 1, respostas: novaResposta, tipo: 'visitaCidadao' });
+        adicionarMensagemUser(value);
+        setTimeout(() => adicionarMensagemBot(`Etapa ${fluxo.etapa + 2} de ${etapasVisitaCidadao.length}: ${etapasVisitaCidadao[fluxo.etapa + 1].pergunta}`), 400);
+      } else {
+        adicionarMensagemUser(value);
+  adicionarMensagemBot('Visita ao cidadão concluída! Dados salvos localmente.');
+  salvarVisitaLocal(novaResposta, 'cidadao');
+  // Geração de resumo clínico conciso
+  const resumo = gerarResumoClinico(novaResposta, 'cidadao');
+  adicionarMensagemBot(resumo);
+  const sugestao = gerarSugestoesTerapia(novaResposta);
+  if (sugestao) {
+    adicionarMensagemBot(sugestao);
+    exibirFeedback('sugestao', sugestao);
+  }
+
+// Sugestão de planos terapêuticos, exames e medicamentos baseada em condições de saúde
+function gerarSugestoesTerapia(respostas: Record<string, string>) {
+  const condicoes = (respostas.condicoesSaude || '').toLowerCase();
+  let sugestoes = [];
+  if (condicoes.includes('diabetes')) {
+    sugestoes.push('Condição: Diabetes detectada. Sugestão: monitoramento glicêmico, orientação alimentar, encaminhamento ao enfermeiro. Avaliar solicitação de exame de glicemia.');
+  }
+  if (condicoes.includes('hipertens')) {
+    sugestoes.push('Condição: Hipertensão detectada. Sugestão: aferição regular da pressão arterial, orientação sobre uso de medicação, encaminhamento ao enfermeiro.');
+  }
+  // Outras condições podem ser adicionadas aqui
+  if (sugestoes.length > 0) {
+    return sugestoes.join('\n');
+  }
+  return '';
+}
+
+// Função utilitária para gerar resumo clínico conciso após visita/cadastro
+function gerarResumoClinico(respostas: Record<string, string>, tipo: 'cidadao' | 'familia' | 'imovel') {
+  if (tipo === 'cidadao') {
+    return `Resumo: Visita a ${respostas.cidadao || 'cidadão'}, motivo: ${respostas.motivo || 'não informado'}, condições de saúde: ${respostas.condicoesSaude || 'não registradas'}, antropometria: ${respostas.antropometria || 'não registrada'}.`;
+  }
+  if (tipo === 'familia') {
+    return `Resumo: Visita à família ${respostas.familia || ''}, motivo: ${respostas.motivo || 'não informado'}, controle ambiental: ${respostas.controleAmbiental || 'não registrado'}.`;
+  }
+  if (tipo === 'imovel') {
+    return `Resumo: Visita ao imóvel ${respostas.imovel || ''}, motivo: ${respostas.motivo || 'não informado'}, controle ambiental: ${respostas.controleAmbiental || 'não registrado'}.`;
+  }
+  return 'Resumo não disponível.';
+}
+  if (novaResposta.exames && novaResposta.exames.toLowerCase() !== 'não' && novaResposta.exames.length > 2) {
+    registrarSolicitacaoExame(novaResposta);
+    adicionarMensagemBot('Solicitação de exame registrada e será sincronizada quando online.');
+  }
+  setFluxo(null);
+      }
+      setInput('');
+      return;
+    }
+    // Fluxo visita família
+    if (fluxo.tipo === 'visitaFamilia') {
+      const permissoes = permissoesAtivas();
+      if (!permissoes.visitas) {
+        adicionarMensagemBot('Você não tem permissão para registrar visitas. Ative a permissão em seu perfil.');
+        setFluxo(null);
+        setInput('');
+        return;
+      }
+      const etapaAtual = etapasVisitaFamilia[fluxo.etapa];
+      let erro = '';
+      const val = value.trim();
+      if (etapaAtual.key === 'familia') {
+        if (!val || val.length < 3) erro = 'Selecione ou informe a família corretamente.';
+      }
+      if (etapaAtual.key === 'visitaRealizada') {
+        if (!['sim','não','nao','s','n'].includes(val.toLowerCase())) erro = 'Responda "Sim" ou "Não".';
+      }
+      if (etapaAtual.key === 'motivo') {
+        if (!val || val.length < 3) erro = 'Informe o motivo da visita.';
+      }
+      if (etapaAtual.key === 'concluir') {
+        if (!['sim','s'].includes(val.toLowerCase())) erro = 'Digite "Sim" para concluir a visita.';
+      }
+      if (etapaAtual.obrigatorio && !val) erro = 'Este campo é obrigatório. ' + etapaAtual.pergunta;
+      if (erro) {
+        adicionarMensagemBot(erro);
+        setInput('');
+        return;
+      }
+      const novaResposta = { ...fluxo.respostas, [etapaAtual.key]: val };
+      if (fluxo.etapa < etapasVisitaFamilia.length - 1) {
+        setFluxo({ etapa: fluxo.etapa + 1, respostas: novaResposta, tipo: 'visitaFamilia' });
+        adicionarMensagemUser(value);
+        setTimeout(() => adicionarMensagemBot(`Etapa ${fluxo.etapa + 2} de ${etapasVisitaFamilia.length}: ${etapasVisitaFamilia[fluxo.etapa + 1].pergunta}`), 400);
+      } else {
+        adicionarMensagemUser(value);
+  adicionarMensagemBot('Visita à família concluída! Dados salvos localmente.');
+  salvarVisitaLocal(novaResposta, 'familia');
+  // Geração de resumo clínico conciso
+  const resumo = gerarResumoClinico(novaResposta, 'familia');
+  adicionarMensagemBot(resumo);
+  const sugestao = gerarSugestoesTerapia(novaResposta);
+  if (sugestao) {
+    adicionarMensagemBot(sugestao);
+    exibirFeedback('sugestao', sugestao);
+  }
+// Mecanismo simples de feedback para aprendizado
+function exibirFeedback(tipo: string, conteudo: string) {
+  setTimeout(() => {
+    adicionarMensagemBot('A sugestão foi útil? [Sim] [Não]');
+    // Registrar resposta do usuário
+    const handler = (msg: string) => {
+      if (msg.trim().toLowerCase() === 'sim' || msg.trim().toLowerCase() === 'não' || msg.trim().toLowerCase() === 'nao') {
+        registrarFeedback(tipo, conteudo, msg.trim().toLowerCase());
+        removerListener();
+        adicionarMensagemBot('Obrigado pelo feedback!');
+      }
+    };
+    function removerListener() {
+      window.removeEventListener('feedbackMsg', listenerWrapper);
+    }
+    function listenerWrapper(e: any) {
+      handler(e.detail);
+    }
+    window.addEventListener('feedbackMsg', listenerWrapper);
+  }, 500);
+}
+
+function registrarFeedback(tipo: string, conteudo: string, resposta: string) {
+  const feedbacks = JSON.parse(localStorage.getItem('feedbackIA30') || '[]');
+  feedbacks.push({ tipo, conteudo, resposta, data: new Date().toISOString() });
+  localStorage.setItem('feedbackIA30', JSON.stringify(feedbacks));
+}
+  if (novaResposta.exames && novaResposta.exames.toLowerCase() !== 'não' && novaResposta.exames.length > 2) {
+    registrarSolicitacaoExame(novaResposta);
+    adicionarMensagemBot('Solicitação de exame registrada e será sincronizada quando online.');
+  }
+  setFluxo(null);
+// Função para registrar solicitação de exame offline
+function registrarSolicitacaoExame(respostas: Record<string, string>) {
+  const exames = JSON.parse(localStorage.getItem('solicitacoesExames') || '[]');
+  const novaSolicitacao = {
+    solicitante: respostas.cidadao || respostas.familia || 'Desconhecido',
+    exame: respostas.exames,
+    data: new Date().toISOString(),
+  };
+  exames.push(novaSolicitacao);
+  localStorage.setItem('solicitacoesExames', JSON.stringify(exames));
+}
+      }
+      setInput('');
+      return;
+    }
+    // Fluxo visita imóvel
+    if (fluxo.tipo === 'visitaImovel') {
+      const permissoes = permissoesAtivas();
+      if (!permissoes.visitas) {
+        adicionarMensagemBot('Você não tem permissão para registrar visitas. Ative a permissão em seu perfil.');
+        setFluxo(null);
+        setInput('');
+        return;
+      }
+      const etapaAtual = etapasVisitaImovel[fluxo.etapa];
+      let erro = '';
+      const val = value.trim();
+      if (etapaAtual.key === 'imovel') {
+        if (!val || val.length < 3) erro = 'Selecione ou informe o imóvel corretamente.';
+      }
+      if (etapaAtual.key === 'visitaRealizada') {
+        if (!['sim','não','nao','s','n'].includes(val.toLowerCase())) erro = 'Responda "Sim" ou "Não".';
+      }
+      if (etapaAtual.key === 'motivo') {
+        if (!val || val.length < 3) erro = 'Informe o motivo da visita.';
+      }
+      if (etapaAtual.key === 'concluir') {
+        if (!['sim','s'].includes(val.toLowerCase())) erro = 'Digite "Sim" para concluir a visita.';
+      }
+      if (etapaAtual.obrigatorio && !val) erro = 'Este campo é obrigatório. ' + etapaAtual.pergunta;
+      if (erro) {
+        adicionarMensagemBot(erro);
+        setInput('');
+        return;
+      }
+      const novaResposta = { ...fluxo.respostas, [etapaAtual.key]: val };
+      if (fluxo.etapa < etapasVisitaImovel.length - 1) {
+        setFluxo({ etapa: fluxo.etapa + 1, respostas: novaResposta, tipo: 'visitaImovel' });
+        adicionarMensagemUser(value);
+        setTimeout(() => adicionarMensagemBot(`Etapa ${fluxo.etapa + 2} de ${etapasVisitaImovel.length}: ${etapasVisitaImovel[fluxo.etapa + 1].pergunta}`), 400);
+      } else {
+        adicionarMensagemUser(value);
+  adicionarMensagemBot('Visita ao imóvel concluída! Dados salvos localmente.');
+  salvarVisitaLocal(novaResposta, 'imovel');
+  // Geração de resumo clínico conciso
+  const resumo = gerarResumoClinico(novaResposta, 'imovel');
+  adicionarMensagemBot(resumo);
+  const sugestao = gerarSugestoesTerapia(novaResposta);
+  if (sugestao) adicionarMensagemBot(sugestao);
+// Sugestão de planos terapêuticos, exames e medicamentos baseada em condições de saúde
+function gerarSugestoesTerapia(respostas: Record<string, string>) {
+  const condicoes = (respostas.condicoesSaude || '').toLowerCase();
+  let sugestoes = [];
+  if (condicoes.includes('diabetes')) {
+    sugestoes.push('Condição: Diabetes detectada. Sugestão: monitoramento glicêmico, orientação alimentar, encaminhamento ao enfermeiro. Avaliar solicitação de exame de glicemia.');
+  }
+  if (condicoes.includes('hipertens')) {
+    sugestoes.push('Condição: Hipertensão detectada. Sugestão: aferição regular da pressão arterial, orientação sobre uso de medicação, encaminhamento ao enfermeiro.');
+  }
+  // Outras condições podem ser adicionadas aqui
+  if (sugestoes.length > 0) {
+    return sugestoes.join('\n');
+  }
+  return '';
+}
+  setFluxo(null);
+// Função utilitária para gerar resumo clínico conciso após visita/cadastro
+function gerarResumoClinico(respostas: Record<string, string>, tipo: 'cidadao' | 'familia' | 'imovel') {
+  if (tipo === 'cidadao') {
+    return `Resumo: Visita a ${respostas.cidadao || 'cidadão'}, motivo: ${respostas.motivo || 'não informado'}, condições de saúde: ${respostas.condicoesSaude || 'não registradas'}, antropometria: ${respostas.antropometria || 'não registrada'}.`;
+  }
+  if (tipo === 'familia') {
+    return `Resumo: Visita à família ${respostas.familia || ''}, motivo: ${respostas.motivo || 'não informado'}, controle ambiental: ${respostas.controleAmbiental || 'não registrado'}.`;
+  }
+  if (tipo === 'imovel') {
+    return `Resumo: Visita ao imóvel ${respostas.imovel || ''}, motivo: ${respostas.motivo || 'não informado'}, controle ambiental: ${respostas.controleAmbiental || 'não registrado'}.`;
+  }
+  return 'Resumo não disponível.';
+}
+      }
+      setInput('');
+      return;
+    }
+  // (Removido bloco duplicado do fluxo visitaCidadao)
+    // Fluxo visita família
+    if (fluxo.tipo === 'visitaFamilia') {
+      const etapaAtual = etapasVisitaFamilia[fluxo.etapa];
+      const novaResposta = { ...fluxo.respostas, [etapaAtual.key]: value.trim() };
+      if (etapaAtual.obrigatorio && !value.trim()) {
+        adicionarMensagemBot('Este campo é obrigatório. ' + etapaAtual.pergunta);
+        setInput('');
+        return;
+      }
+      if (fluxo.etapa < etapasVisitaFamilia.length - 1) {
+        setFluxo({ etapa: fluxo.etapa + 1, respostas: novaResposta, tipo: 'visitaFamilia' });
+        adicionarMensagemUser(value);
+        setTimeout(() => adicionarMensagemBot(`Etapa ${fluxo.etapa + 2} de ${etapasVisitaFamilia.length}: ${etapasVisitaFamilia[fluxo.etapa + 1].pergunta}`), 400);
+      } else {
+        adicionarMensagemUser(value);
+        adicionarMensagemBot('Visita à família concluída! Dados salvos localmente.');
+        salvarVisitaLocal(novaResposta, 'familia');
         setFluxo(null);
       }
       setInput('');
       return;
     }
+    // Fluxo visita imóvel
+    if (fluxo.tipo === 'visitaImovel') {
+      const etapaAtual = etapasVisitaImovel[fluxo.etapa];
+      const novaResposta = { ...fluxo.respostas, [etapaAtual.key]: value.trim() };
+      if (etapaAtual.obrigatorio && !value.trim()) {
+        adicionarMensagemBot('Este campo é obrigatório. ' + etapaAtual.pergunta);
+        setInput('');
+        return;
+      }
+      if (fluxo.etapa < etapasVisitaImovel.length - 1) {
+        setFluxo({ etapa: fluxo.etapa + 1, respostas: novaResposta, tipo: 'visitaImovel' });
+        adicionarMensagemUser(value);
+        setTimeout(() => adicionarMensagemBot(`Etapa ${fluxo.etapa + 2} de ${etapasVisitaImovel.length}: ${etapasVisitaImovel[fluxo.etapa + 1].pergunta}`), 400);
+      } else {
+        adicionarMensagemUser(value);
+        adicionarMensagemBot('Visita ao imóvel concluída! Dados salvos localmente.');
+        salvarVisitaLocal(novaResposta, 'imovel');
+        setFluxo(null);
+      }
+      setInput('');
+      return;
+    }
+  // Salvar visita localmente e no buffer de sincronização
+  function salvarVisitaLocal(respostas: Record<string, string>, tipo: 'cidadao' | 'familia' | 'imovel') {
+    const visitas = JSON.parse(localStorage.getItem('visitas') || '[]');
+    const novaVisita = { ...respostas, tipo, data: new Date().toISOString() };
+    visitas.push(novaVisita);
+    localStorage.setItem('visitas', JSON.stringify(visitas));
+    bufferSincronizacao.relatorios.push(novaVisita);
+    persistirBuffer();
+  }
   } else if (fluxo && activeIdx !== 0) {
     // Se estiver em outra conversa, apenas processa mensagem normalmente, sem afetar o fluxo guiado
     processarMensagem(value);
@@ -289,7 +731,7 @@ export default function ChatbotIA(props: ChatbotIAProps = {}) {
   // Mensagens da conversa ativa
   const messages = Array.isArray(conversations[activeIdx]?.messages) ? conversations[activeIdx].messages : [];
 
-  // --- FLUXOS GUIADOS DE CADASTRO ---
+  // --- FLUXOS GUIADOS DE CADASTRO E VISITA ---
   // Estrutura das etapas do cadastro de cidadão
   const etapasCidadao = [
     { key: 'nome', pergunta: 'Qual o nome completo do cidadão?', obrigatorio: true },
@@ -308,8 +750,51 @@ export default function ChatbotIA(props: ChatbotIAProps = {}) {
     { key: 'referencia', pergunta: 'Ponto de referência (opcional)?', obrigatorio: false },
     { key: 'tipoLogradouro', pergunta: 'Tipo de logradouro (Rua, Avenida, Travessa, etc)?', obrigatorio: true },
   ];
+
+  // Etapas do fluxo de visita ao cidadão
+  const etapasVisitaCidadao = [
+    { key: 'cidadao', pergunta: 'Selecione o cidadão visitado:', obrigatorio: true },
+    { key: 'visitaRealizada', pergunta: 'A visita foi realizada?', obrigatorio: true },
+    { key: 'motivo', pergunta: 'Qual o motivo da visita?', obrigatorio: true },
+    { key: 'condicoesSaude', pergunta: 'Visualizar condições de saúde. Deseja registrar alguma observação?', obrigatorio: false },
+    // Protocolos clínicos específicos
+    { key: 'gestante', pergunta: 'Gestante? (Sim/Não)', obrigatorio: false, protocolo: 'saudeMulher' },
+    { key: 'vacinas', pergunta: 'Criança com vacinação em dia? (Sim/Não/Não se aplica)', obrigatorio: false, protocolo: 'saudeCrianca' },
+    { key: 'puericultura', pergunta: 'Necessita acompanhamento de puericultura? (Sim/Não/Não se aplica)', obrigatorio: false, protocolo: 'saudeCrianca' },
+    { key: 'buscaAtiva', pergunta: 'Expandir busca ativa? (se aplicável)', obrigatorio: false },
+    { key: 'acompanhamento', pergunta: 'Expandir acompanhamento? (se aplicável)', obrigatorio: false },
+    { key: 'antropometria', pergunta: 'Registrar antropometria? (se necessário)', obrigatorio: false },
+    { key: 'acompProfissional', pergunta: 'Informar acompanhamento profissional?', obrigatorio: false },
+    { key: 'concluir', pergunta: 'Concluir visita?', obrigatorio: true },
+  ];
+  // Etapas do fluxo de visita à família
+  const etapasVisitaFamilia = [
+    { key: 'familia', pergunta: 'Selecione a família visitada:', obrigatorio: true },
+    { key: 'visitaRealizada', pergunta: 'A visita foi realizada?', obrigatorio: true },
+    { key: 'motivo', pergunta: 'Qual o motivo da visita?', obrigatorio: true },
+    // Protocolos clínicos específicos
+    { key: 'gestante', pergunta: 'Gestante na família? (Sim/Não/Não se aplica)', obrigatorio: false, protocolo: 'saudeMulher' },
+    { key: 'vacinas', pergunta: 'Criança na família com vacinação em dia? (Sim/Não/Não se aplica)', obrigatorio: false, protocolo: 'saudeCrianca' },
+    { key: 'puericultura', pergunta: 'Necessita acompanhamento de puericultura? (Sim/Não/Não se aplica)', obrigatorio: false, protocolo: 'saudeCrianca' },
+    { key: 'controleAmbiental', pergunta: 'Expandir controle ambiental/vetorial?', obrigatorio: false },
+    { key: 'acompProfissional', pergunta: 'Informar acompanhamento profissional?', obrigatorio: false },
+    { key: 'concluir', pergunta: 'Concluir visita?', obrigatorio: true },
+  ];
+  // Etapas do fluxo de visita ao imóvel
+  const etapasVisitaImovel = [
+    { key: 'imovel', pergunta: 'Selecione o imóvel visitado:', obrigatorio: true },
+    { key: 'visitaRealizada', pergunta: 'A visita foi realizada?', obrigatorio: true },
+    { key: 'motivo', pergunta: 'Qual o motivo da visita?', obrigatorio: true },
+    { key: 'controleAmbiental', pergunta: 'Expandir controle ambiental/vetorial?', obrigatorio: false },
+    { key: 'acompProfissional', pergunta: 'Informar acompanhamento profissional?', obrigatorio: false },
+    { key: 'concluir', pergunta: 'Concluir visita?', obrigatorio: true },
+  ];
+
   // Estado do fluxo guiado
-  const [fluxo, setFluxo] = useState<{ etapa: number, respostas: Record<string, string>, tipo?: 'cidadao' | 'rua', conversaId?: string } | null>(null);
+  const [fluxo, setFluxo] = useState<
+    { etapa: number, respostas: Record<string, string>, tipo?: 'cidadao' | 'rua' | 'visitaCidadao' | 'visitaFamilia' | 'visitaImovel', conversaId?: string }
+    | null
+  >(null);
 
   // Processa mensagem fora do fluxo guiado, simulando o envio e resposta do bot
   function processarMensagem(msg: string) {
@@ -685,6 +1170,60 @@ export default function ChatbotIA(props: ChatbotIAProps = {}) {
       setInput('');
       return;
     }
+    // Comando para iniciar fluxo guiado visita cidadão
+    if (/^nova visita cidadão|^nova visita cidadao/i.test(input.trim())) {
+      let permissoes = {};
+      try {
+        permissoes = JSON.parse(localStorage.getItem('permissoesUsuario') || '{}');
+      } catch {}
+      if (!permissoes.visitas) {
+        adicionarMensagemUser(input);
+        adicionarMensagemBot('Você não tem permissão para registrar visitas. Ative a permissão em seu perfil.');
+        setInput('');
+        return;
+      }
+      setFluxo({ etapa: 0, respostas: {}, tipo: 'visitaCidadao', conversaId: conversations[activeIdx]?.id });
+      adicionarMensagemUser(input);
+      adicionarMensagemBot('Iniciando registro de visita ao cidadão. ' + etapasVisitaCidadao[0].pergunta);
+      setInput('');
+      return;
+    }
+    // Comando para iniciar fluxo guiado visita família
+    if (/^nova visita família|^nova visita familia/i.test(input.trim())) {
+      let permissoes = {};
+      try {
+        permissoes = JSON.parse(localStorage.getItem('permissoesUsuario') || '{}');
+      } catch {}
+      if (!permissoes.visitas) {
+        adicionarMensagemUser(input);
+        adicionarMensagemBot('Você não tem permissão para registrar visitas. Ative a permissão em seu perfil.');
+        setInput('');
+        return;
+      }
+      setFluxo({ etapa: 0, respostas: {}, tipo: 'visitaFamilia', conversaId: conversations[activeIdx]?.id });
+      adicionarMensagemUser(input);
+      adicionarMensagemBot('Iniciando registro de visita à família. ' + etapasVisitaFamilia[0].pergunta);
+      setInput('');
+      return;
+    }
+    // Comando para iniciar fluxo guiado visita imóvel
+    if (/^nova visita imóvel|^nova visita imovel/i.test(input.trim())) {
+      let permissoes = {};
+      try {
+        permissoes = JSON.parse(localStorage.getItem('permissoesUsuario') || '{}');
+      } catch {}
+      if (!permissoes.visitas) {
+        adicionarMensagemUser(input);
+        adicionarMensagemBot('Você não tem permissão para registrar visitas. Ative a permissão em seu perfil.');
+        setInput('');
+        return;
+      }
+      setFluxo({ etapa: 0, respostas: {}, tipo: 'visitaImovel', conversaId: conversations[activeIdx]?.id });
+      adicionarMensagemUser(input);
+      adicionarMensagemBot('Iniciando registro de visita ao imóvel. ' + etapasVisitaImovel[0].pergunta);
+      setInput('');
+      return;
+    }
 
     // Comando para sincronizar dados
     if (/^sincronizar dados$/i.test(input.trim())) {
@@ -823,6 +1362,7 @@ export default function ChatbotIA(props: ChatbotIAProps = {}) {
               title={showHistory ? 'Recolher conversas' : 'Expandir conversas'}
               onClick={() => setShowHistory(v => !v)}
               style={{ transition: 'background 0.2s' }}
+              aria-label={showHistory ? 'Recolher conversas' : 'Expandir conversas'}
             >
               {showHistory ? (
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1002,6 +1542,33 @@ export default function ChatbotIA(props: ChatbotIAProps = {}) {
                       title={fluxo ? 'Finalize o cadastro atual antes de iniciar outro.' : ''}
                     >
                       + Novo Cidadão
+                    </Button>
+                    <Button
+                      type="button"
+                      className="px-1 py-0.5 text-[10px] h-6 min-h-0 rounded-full border border-pink-400 text-pink-700 bg-white hover:bg-pink-50 transition-all"
+                      onClick={() => { sendMessageWithValue('Nova visita cidadão'); }}
+                      disabled={!!fluxo}
+                      title={fluxo ? 'Finalize o cadastro atual antes de iniciar outro.' : ''}
+                    >
+                      + Visita Cidadão
+                    </Button>
+                    <Button
+                      type="button"
+                      className="px-1 py-0.5 text-[10px] h-6 min-h-0 rounded-full border border-yellow-400 text-yellow-700 bg-white hover:bg-yellow-50 transition-all"
+                      onClick={() => { sendMessageWithValue('Nova visita família'); }}
+                      disabled={!!fluxo}
+                      title={fluxo ? 'Finalize o cadastro atual antes de iniciar outro.' : ''}
+                    >
+                      + Visita Família
+                    </Button>
+                    <Button
+                      type="button"
+                      className="px-1 py-0.5 text-[10px] h-6 min-h-0 rounded-full border border-gray-400 text-gray-700 bg-white hover:bg-gray-50 transition-all"
+                      onClick={() => { sendMessageWithValue('Nova visita imóvel'); }}
+                      disabled={!!fluxo}
+                      title={fluxo ? 'Finalize o cadastro atual antes de iniciar outro.' : ''}
+                    >
+                      + Visita Imóvel
                     </Button>
                     <Button
                       type="button"

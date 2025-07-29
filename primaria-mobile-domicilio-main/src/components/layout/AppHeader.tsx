@@ -12,7 +12,7 @@ export function AppHeader() {
 
   return (
     <>
-      <header className="flex items-center justify-between p-4 bg-primary text-primary-foreground">
+  <header className="flex items-center justify-between p-4 bg-primary text-primary-foreground sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <SidebarTrigger />
           <Button

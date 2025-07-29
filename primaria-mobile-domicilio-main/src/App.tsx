@@ -1,3 +1,4 @@
+import NotFound from "./pages/NotFound";
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -30,7 +31,8 @@ import Privacy from "./pages/Privacy";
 import UserInfo from "./pages/UserInfo";
 import DataUpdate from "./pages/DataUpdate";
 import About from "./pages/About";
-import NotFound from "./pages/NotFound";
+
+import ChatbotPage from "./pages/Chatbot";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +68,8 @@ const App = () => (
             <Route path="/visita/familia/nova" element={<VisitaFamilia />} />
             <Route path="/visita/imovel/nova" element={<VisitaImovel />} />
             
+            {/* Rota do Planejamento de Roteiro */}
+            {/* <Route path="/planejamento-roteiro" element={<PlanejamentoRoteiro />} /> */}
             {/* Rotas do Sistema de Sincronização e Relatórios */}
             <Route path="/sync" element={<Sync />} />
             <Route path="/configuracao-sistema" element={<ConfiguracaoSistema />} />
@@ -79,6 +83,7 @@ const App = () => (
             <Route path="/data-update" element={<DataUpdate />} />
             <Route path="/about" element={<About />} />
             
+            <Route path="/chatbot" element={<ChatbotPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

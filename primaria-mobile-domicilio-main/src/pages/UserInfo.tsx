@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import React, { useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,6 +15,63 @@ import {
   Edit,
   Activity
 } from 'lucide-react';
+
+// Permissões disponíveis (fora do componente)
+const PERMISSOES = [
+  { key: 'agente', label: 'Agente Comunitário' },
+  { key: 'cadastro', label: 'Cadastro Individual' },
+  { key: 'visitas', label: 'Visitas Domiciliares' },
+  { key: 'relatorios', label: 'Relatórios Básicos' }
+];
+
+function PermissoesEditor() {
+  const [permissoes, setPermissoes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('permissoesUsuario');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {
+      agente: true,
+      cadastro: true,
+      visitas: true,
+      relatorios: true,
+    };
+  });
+  const [salvo, setSalvo] = useState(false);
+
+  useEffect(() => {
+    setSalvo(false);
+  }, [permissoes]);
+
+  function handleChange(key) {
+    setPermissoes(p => ({ ...p, [key]: !p[key] }));
+  }
+  function salvar() {
+    localStorage.setItem('permissoesUsuario', JSON.stringify(permissoes));
+    setSalvo(true);
+  }
+
+  return (
+    <div className="space-y-2">
+      {PERMISSOES.map(perm => (
+        <label key={perm.key} className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!!permissoes[perm.key]}
+            onChange={() => handleChange(perm.key)}
+          />
+          <span>{perm.label}</span>
+        </label>
+      ))}
+      <button
+        className="mt-2 px-3 py-1 rounded bg-primary text-white hover:bg-primary/90"
+        onClick={salvar}
+        type="button"
+      >Salvar permissões</button>
+      {salvo && <span className="text-green-600 text-xs ml-2">Permissões salvas!</span>}
+    </div>
+  );
+}
 
 const UserInfo = () => {
   return (
@@ -149,19 +207,9 @@ const UserInfo = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Badge variant="default" className="w-full justify-center">
-                Agente Comunitário
-              </Badge>
-              <Badge variant="secondary" className="w-full justify-center">
-                Cadastro Individual
-              </Badge>
-              <Badge variant="secondary" className="w-full justify-center">
-                Visitas Domiciliares
-              </Badge>
-              <Badge variant="outline" className="w-full justify-center">
-                Relatórios Básicos
-              </Badge>
+              <PermissoesEditor />
             </CardContent>
+
           </Card>
 
           <Card>
