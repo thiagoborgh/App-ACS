@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { fuzzySearch } from '@/lib/fuzzySearch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,19 +8,30 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Search, Plus, MapPin, Filter, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { mockApi, Logradouro } from '@/data/mockData';
 
 const Logradouros = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [logradouros, setLogradouros] = useState<Logradouro[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Mock data para logradouros
-  const logradouros = [
-    { id: 1, nome: 'Rua das Flores', bairro: 'Centro', domicilios: 15 },
-    { id: 2, nome: 'Avenida Principal', bairro: 'Jardim Primavera', domicilios: 28 },
-    { id: 3, nome: 'Travessa São João', bairro: 'Vila Nova', domicilios: 8 },
-    { id: 4, nome: 'Rua da Saúde', bairro: 'Centro', domicilios: 22 },
-    { id: 5, nome: 'Estrada Municipal', bairro: 'Rural', domicilios: 12 },
-  ];
+  // Carrega logradouros dos dados mocados
+  useEffect(() => {
+    const loadLogradouros = async () => {
+      try {
+        setLoading(true);
+        const data = await mockApi.getLogradouros();
+        setLogradouros(data);
+      } catch (error) {
+        console.error('Erro ao carregar logradouros:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLogradouros();
+  }, []);
 
   const filteredLogradouros = searchTerm
     ? fuzzySearch(logradouros, ['nome', 'bairro'], searchTerm, 3)
@@ -105,7 +116,7 @@ const Logradouros = () => {
                     <p className="text-sm text-gray-600 mb-3">{logradouro.bairro}</p>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-500">
-                        {logradouro.domicilios} domicílios
+                        {logradouro.quantidadeDomicilios} domicílios
                       </span>
                       <Button
                         size="sm"

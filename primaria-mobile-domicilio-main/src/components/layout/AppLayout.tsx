@@ -31,9 +31,9 @@ export function AppLayout({ children }: AppLayoutProps) {
     <LayoutContext.Provider value={{ isHorizontalMode, setIsHorizontalMode }}>
       <SidebarProvider defaultOpen={!isMobile}>
         <div className="min-h-screen flex w-full bg-background">
-          {!isMobile && <AppSidebar />}
+          <AppSidebar />
           <SidebarInset className="flex-1">
-            {!isMobile && <AppHeader />}
+            <AppHeader />
             <main className="flex-1 p-0 safe-area-inset">
               {children}
             </main>

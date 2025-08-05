@@ -66,6 +66,7 @@ import Fuse from 'fuse.js';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './dialog';
 import { Button } from './button';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './accordion';
+import AssistenteACS from './AssistenteACS';
 
 // Utilitário para gerar IDs únicos
 function uuid() {
@@ -681,6 +682,7 @@ function gerarResumoClinico(respostas: Record<string, string>, tipo: 'cidadao' |
     setInput('');
   }
   const [fullScreen, setFullScreen] = useState(false);
+  const [assistenteACSOpen, setAssistenteACSOpen] = useState(false);
   const saudacao = `Olá, ${usuario.nome}! (${userProfile})`;
   const [showHistory, setShowHistory] = useState(false);
   // Conversas: cada conversa é um array de mensagens
@@ -1407,6 +1409,20 @@ function gerarResumoClinico(respostas: Record<string, string>, tipo: 'cidadao' |
                 </svg>
               )}
             </button>
+            
+            {/* Botão para Assistente ACS */}
+            <button
+              className="mr-2 p-1 rounded text-white hover:bg-white/10 focus:bg-white/20 flex items-center gap-1"
+              title="Assistente ACS Especializado"
+              onClick={() => setAssistenteACSOpen(true)}
+              style={{ transition: 'background 0.2s' }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.5 2C8.67 2 8 2.67 8 3.5S8.67 5 9.5 5 11 4.33 11 3.5 10.33 2 9.5 2ZM5.75 7L7.5 6.5 9.5 7.75 11.5 6.5 13.25 7 11.5 10.75V16C11.5 16.83 10.83 17.5 10 17.5S8.5 16.83 8.5 16V12.5L6.5 10.75 5.75 7ZM18.5 11C17.12 11 16 12.12 16 13.5S17.12 16 18.5 16 21 14.88 21 13.5 19.88 11 18.5 11ZM2 18.5C2 19.33 2.67 20 3.5 20H20.5C21.33 20 22 19.33 22 18.5S21.33 17 20.5 17H3.5C2.67 17 2 17.67 2 18.5Z" fill="currentColor"/>
+              </svg>
+              <span className="text-xs hidden sm:inline">ACS</span>
+            </button>
+            
             {/* Ícone de robô para IA */}
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24">
               <g>
@@ -1625,6 +1641,12 @@ function gerarResumoClinico(respostas: Record<string, string>, tipo: 'cidadao' |
         </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Assistente ACS Especializado */}
+      <AssistenteACS 
+        open={assistenteACSOpen} 
+        onOpenChange={setAssistenteACSOpen} 
+      />
     </>
   );
 }

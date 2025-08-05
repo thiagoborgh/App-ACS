@@ -1,39 +1,58 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { fuzzySearch } from '@/lib/fuzzySearch';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Plus, Search, Home, Edit, MapPin } from 'lucide-react';
+import { mockApi, Logradouro, Domicilio } from '@/data/mockData';
 
 const LogradouroDetalhes = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [logradouro, setLogradouro] = useState<Logradouro | null>(null);
+  const [domicilios, setDomicilios] = useState<Domicilio[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data para domicílios
-  const domicilios = [
-    { id: 1, numero: '123', complemento: '', tipo: 'Casa', situacao: 'Ocupado', familias: 1 },
-    { id: 2, numero: '125', complemento: 'Apto 101', tipo: 'Apartamento', situacao: 'Ocupado', familias: 2 },
-    { id: 3, numero: '127', complemento: '', tipo: 'Casa', situacao: 'Vago', familias: 0 },
-    { id: 4, numero: '129', complemento: 'Fundos', tipo: 'Cômodo', situacao: 'Ocupado', familias: 1 },
-  ];
+  // Carrega dados do logradouro e domicílios
+  useEffect(() => {
+    const loadData = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        const [logradouroData, domiciliosData] = await Promise.all([
+          mockApi.getLogradouro(id),
+          mockApi.getDomicilios(id)
+        ]);
+        
+        setLogradouro(logradouroData);
+        setDomicilios(domiciliosData);
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const logradouro = {
-    nome: 'Rua das Flores',
-    bairro: 'Centro'
-  };
+    loadData();
+  }, [id]);
 
   const filteredDomicilios = searchTerm
     ? fuzzySearch(domicilios, ['numero', 'complemento'], searchTerm, 3)
     : domicilios;
 
   const getSituacaoColor = (situacao: string) => {
-    switch (situacao) {
-      case 'Ocupado':
+    switch (situacao.toLowerCase()) {
+      case 'ocupado':
         return 'bg-green-100 text-green-800';
-      case 'Vago':
+      case 'desocupado':
         return 'bg-yellow-100 text-yellow-800';
+      case 'recusou':
+        return 'bg-red-100 text-red-800';
+      case 'ausente':
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -54,8 +73,8 @@ const LogradouroDetalhes = () => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex-1">
-              <h1 className="text-lg font-bold text-gray-800">{logradouro.nome}</h1>
-              <p className="text-sm text-gray-600">{logradouro.bairro}</p>
+              <h1 className="text-lg font-bold text-gray-800">{logradouro?.nome || 'Carregando...'}</h1>
+              <p className="text-sm text-gray-600">{logradouro?.bairro || ''}</p>
             </div>
           </div>
         </div>
@@ -101,13 +120,13 @@ const LogradouroDetalhes = () => {
                       </h3>
                     </div>
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-sm text-gray-600">{domicilio.tipo}</span>
+                      <span className="text-sm text-gray-600 capitalize">{domicilio.tipo}</span>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSituacaoColor(domicilio.situacao)}`}>
                         {domicilio.situacao}
                       </span>
                     </div>
                     <p className="text-sm text-gray-500">
-                      {domicilio.familias} família(s) cadastrada(s)
+                      {domicilio.quantidadeFamilias} família(s) cadastrada(s)
                     </p>
                   </div>
                 </div>

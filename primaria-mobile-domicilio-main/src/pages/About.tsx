@@ -11,7 +11,13 @@ import {
   Smartphone,
   ExternalLink,
   Mail,
-  Phone
+  Github,
+  Brain,
+  Target,
+  Lightbulb,
+  Code,
+  Database,
+  Zap
 } from 'lucide-react';
 
 const About = () => {
@@ -20,9 +26,9 @@ const About = () => {
       <div className="flex items-center gap-3 mb-6">
         <Info className="w-8 h-8 text-primary" />
         <div>
-          <h1 className="text-3xl font-bold">Sobre o Sistema</h1>
+          <h1 className="text-3xl font-bold">Sobre o Projeto</h1>
           <p className="text-muted-foreground">
-            Conheça mais sobre o sistema e-SUS Território
+            Sistema ACS com Inteligência Artificial - Protótipo Avançado
           </p>
         </div>
       </div>
@@ -34,26 +40,26 @@ const About = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Heart className="w-5 h-5 text-red-500" />
-                Sobre o e-SUS Território
+                Sobre o Projeto ACS IA
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                O e-SUS Território é uma ferramenta digital desenvolvida para apoiar o trabalho 
-                dos Agentes Comunitários de Saúde (ACS) e Agentes de Combate às Endemias (ACE) 
-                na coleta e organização de informações sobre as famílias e indivíduos em seus 
-                territórios de atuação.
+                Este é um protótipo avançado de sistema para Agentes Comunitários de Saúde (ACS) 
+                que integra Inteligência Artificial para otimizar o atendimento domiciliar e 
+                melhorar a qualidade do cuidado oferecido às famílias.
               </p>
               <p className="text-sm text-muted-foreground">
-                Este sistema faz parte da Estratégia e-SUS Atenção Básica, que busca informatizar 
-                e qualificar o registro das informações de saúde na Atenção Básica, contribuindo 
-                para o cuidado integral e a vigilância em saúde.
+                O sistema utiliza algoritmos inteligentes para validação de dados, detecção 
+                de alertas clínicos, recomendações de materiais e otimização de rotas, 
+                proporcionando uma experiência mais eficiente e precisa para os profissionais de saúde.
               </p>
               <div className="flex flex-wrap gap-2 mt-4">
-                <Badge variant="default">Atenção Básica</Badge>
-                <Badge variant="secondary">Vigilância em Saúde</Badge>
-                <Badge variant="outline">Território</Badge>
-                <Badge variant="outline">Cadastro Familiar</Badge>
+                <Badge variant="default" className="bg-gradient-to-r from-purple-600 to-blue-600">Inteligência Artificial</Badge>
+                <Badge variant="secondary">Protótipo</Badge>
+                <Badge variant="outline">ACS</Badge>
+                <Badge variant="outline">Saúde Digital</Badge>
+                <Badge className="bg-orange-100 text-orange-800">BETA</Badge>
               </div>
             </CardContent>
           </Card>
@@ -61,45 +67,45 @@ const About = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Funcionalidades Principais
+                <Brain className="w-5 h-5 text-purple-500" />
+                Funcionalidades com IA
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-3 text-sm">
                 <li className="flex items-start gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
                   <div>
-                    <strong>Cadastro Domiciliar e Territorial:</strong> Registro das condições 
-                    de moradia e saneamento básico
+                    <strong>Validação Inteligente:</strong> Sistema que previne erros baseados 
+                    em contexto (ex: não permite marcar homem como gestante)
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
                   <div>
-                    <strong>Cadastro da Família:</strong> Informações sobre composição e 
-                    situação socioeconômica das famílias
+                    <strong>Detector de Alertas:</strong> Identifica automaticamente situações 
+                    críticas que requerem atenção imediata
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
                   <div>
-                    <strong>Cadastro Individual:</strong> Dados demográficos, condições de 
-                    saúde e situações de vulnerabilidade
+                    <strong>Modal de Pré-Atendimento:</strong> Preparação inteligente com 
+                    contexto IA antes de cada visita
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
                   <div>
-                    <strong>Visitas Domiciliares:</strong> Registro de visitas e 
-                    acompanhamentos realizados
+                    <strong>Assistente IA:</strong> Chatbot especializado para suporte 
+                    aos ACS durante o trabalho
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
                   <div>
-                    <strong>Relatórios Territoriais:</strong> Geração de relatórios para 
-                    planejamento e gestão
+                    <strong>Dashboard Inteligente:</strong> Relatórios e insights gerados 
+                    automaticamente pela IA
                   </div>
                 </li>
               </ul>
@@ -109,28 +115,28 @@ const About = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Globe className="w-5 h-5" />
-                Benefícios para a Saúde Pública
+                <Target className="w-5 h-5 text-green-500" />
+                Objetivos do Projeto
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-sm">Para os Profissionais</h4>
+                  <h4 className="font-semibold text-sm">Inovação Tecnológica</h4>
                   <ul className="text-xs text-muted-foreground space-y-1">
-                    <li>• Agilidade no registro de informações</li>
-                    <li>• Redução de retrabalho</li>
-                    <li>• Melhor organização dos dados</li>
-                    <li>• Facilita o planejamento de ações</li>
+                    <li>• Demonstrar potencial da IA na saúde</li>
+                    <li>• Validar conceitos inovadores</li>
+                    <li>• Testar usabilidade avançada</li>
+                    <li>• Explorar automação inteligente</li>
                   </ul>
                 </div>
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-sm">Para a Comunidade</h4>
+                  <h4 className="font-semibold text-sm">Impacto na Saúde</h4>
                   <ul className="text-xs text-muted-foreground space-y-1">
-                    <li>• Melhoria no atendimento</li>
-                    <li>• Identificação de vulnerabilidades</li>
-                    <li>• Ações de prevenção direcionadas</li>
-                    <li>• Acompanhamento contínuo</li>
+                    <li>• Reduzir erros humanos</li>
+                    <li>• Acelerar atendimentos</li>
+                    <li>• Melhorar precisão diagnóstica</li>
+                    <li>• Otimizar recursos disponíveis</li>
                   </ul>
                 </div>
               </div>
@@ -143,33 +149,38 @@ const About = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Smartphone className="w-5 h-5" />
-                Informações Técnicas
+                <Code className="w-5 h-5" />
+                Stack Tecnológico
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h4 className="font-semibold text-sm mb-1">Versão do Sistema</h4>
-                <p className="text-sm text-muted-foreground">v3.1.2</p>
-              </div>
-              <Separator />
-              <div>
-                <h4 className="font-semibold text-sm mb-1">Última Atualização</h4>
-                <p className="text-sm text-muted-foreground">22 de Janeiro de 2024</p>
-              </div>
-              <Separator />
-              <div>
-                <h4 className="font-semibold text-sm mb-1">Compatibilidade</h4>
+                <h4 className="font-semibold text-sm mb-1">Frontend</h4>
                 <div className="flex flex-wrap gap-1 mt-1">
-                  <Badge variant="outline" className="text-xs">Android 8+</Badge>
-                  <Badge variant="outline" className="text-xs">iOS 12+</Badge>
-                  <Badge variant="outline" className="text-xs">Web</Badge>
+                  <Badge variant="outline" className="text-xs">React 18</Badge>
+                  <Badge variant="outline" className="text-xs">TypeScript</Badge>
+                  <Badge variant="outline" className="text-xs">Tailwind CSS</Badge>
+                  <Badge variant="outline" className="text-xs">Shadcn/UI</Badge>
                 </div>
               </div>
               <Separator />
               <div>
-                <h4 className="font-semibold text-sm mb-1">Desenvolvido por</h4>
-                <p className="text-sm text-muted-foreground">Ministério da Saúde</p>
+                <h4 className="font-semibold text-sm mb-1">Build & Deploy</h4>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  <Badge variant="outline" className="text-xs">Vite</Badge>
+                  <Badge variant="outline" className="text-xs">Surge.sh</Badge>
+                  <Badge variant="outline" className="text-xs">PWA Ready</Badge>
+                </div>
+              </div>
+              <Separator />
+              <div>
+                <h4 className="font-semibold text-sm mb-1">Versão Atual</h4>
+                <p className="text-sm text-muted-foreground">v1.0.0-beta</p>
+              </div>
+              <Separator />
+              <div>
+                <h4 className="font-semibold text-sm mb-1">Última Atualização</h4>
+                <p className="text-sm text-muted-foreground">05 de Agosto de 2025</p>
               </div>
             </CardContent>
           </Card>
@@ -177,61 +188,79 @@ const About = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Segurança e Privacidade
+                <Lightbulb className="w-5 h-5 text-yellow-500" />
+                Status do Projeto
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Dados criptografados</span>
+                <span className="text-sm">Protótipo funcional</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Conforme LGPD</span>
+                <span className="text-sm">IA integrada e operacional</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Backup automático</span>
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span className="text-sm">Em desenvolvimento contínuo</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Controle de acesso</span>
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Testes de validação</span>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Suporte e Contato</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="w-5 h-5" />
+                Dados de Demonstração
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="outline" size="sm" className="w-full gap-2">
-                <Mail className="w-4 h-4" />
-                suporte@saude.gov.br
-              </Button>
-              <Button variant="outline" size="sm" className="w-full gap-2">
-                <Phone className="w-4 h-4" />
-                0800 644 6543
-              </Button>
-              <Button variant="outline" size="sm" className="w-full gap-2">
-                <ExternalLink className="w-4 h-4" />
-                Manual do Usuário
-              </Button>
+              <p className="text-xs text-muted-foreground">
+                Este protótipo utiliza dados fictícios para demonstração das funcionalidades.
+              </p>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Pessoas cadastradas:</span>
+                  <span className="font-semibold">15+</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Visitas no roteiro:</span>
+                  <span className="font-semibold">9</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Famílias mapeadas:</span>
+                  <span className="font-semibold">12</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="pt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Github className="w-5 h-5" />
+                Desenvolvimento
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
               <div className="text-center space-y-2">
-                <div className="text-lg font-bold text-primary">SUS</div>
+                <div className="text-lg font-bold text-primary">ACS-IA</div>
                 <div className="text-sm text-muted-foreground">
-                  Sistema Único de Saúde
+                  Protótipo com Inteligência Artificial
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Saúde é direito de todos e dever do Estado
+                  Desenvolvido para demonstrar o futuro da saúde digital
                 </div>
               </div>
+              <Button variant="outline" size="sm" className="w-full gap-2">
+                <ExternalLink className="w-4 h-4" />
+                Ver no GitHub
+              </Button>
             </CardContent>
           </Card>
         </div>

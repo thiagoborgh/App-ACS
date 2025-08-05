@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, User, FileText, Heart, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, User, FileText, Heart, AlertTriangle, Brain } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -313,7 +313,15 @@ const CadastroIndividual = () => {
                 Etapa {currentStep} de {totalSteps} • {currentStepData.title}
               </p>
             </div>
-            <div className="w-9 h-9" /> {/* Spacer para centralizar */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/cadastro-inteligente')}
+              className="flex items-center gap-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+            >
+              <Brain className="w-4 h-4" />
+              IA
+            </Button>
           </div>
 
           {/* Progress Bar melhorado */}

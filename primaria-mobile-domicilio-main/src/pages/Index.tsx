@@ -1,15 +1,48 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Home, User, FileHeart, Users, Building, Activity, Calendar, Plus, Bell, Settings } from 'lucide-react';
+import { Home, User, FileHeart, Users, Building, Activity, Calendar, Plus, Bell, Settings, Route } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
-import ChatbotACS from '@/components/ui/ChatbotACS';
+import AssistenteAvancado from '@/components/ui/AssistenteAvancado';
+import { mockApi } from '@/data/mockData';
 
 const Index = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const [showAssistente, setShowAssistente] = useState(false);
+  const [stats, setStats] = useState({
+    domicilios: 0,
+    familias: 0,
+    individuos: 0,
+    visitas: 0
+  });
+
+  // Carrega estatísticas dos dados mocados
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const [domicilios, familias, pessoas, visitas] = await Promise.all([
+          mockApi.getDomicilios(),
+          mockApi.getFamilias(),
+          mockApi.getPessoas(),
+          mockApi.getVisitas()
+        ]);
+
+        setStats({
+          domicilios: domicilios.length,
+          familias: familias.length,
+          individuos: pessoas.length,
+          visitas: visitas.length
+        });
+      } catch (error) {
+        console.error('Erro ao carregar estatísticas:', error);
+      }
+    };
+
+    loadStats();
+  }, []);
 
   // Inserir o botão I.A30 entre Indivíduos e Visitas
   const mainModules = [
@@ -32,7 +65,7 @@ const Index = () => {
       subtitle: 'Assistente Inteligente',
       icon: null,
       gradient: 'bg-gradient-to-br from-purple-600 to-blue-600',
-      action: () => setShowChatbot(true),
+      action: () => setShowAssistente(true),
       isIA: true
     },
     {
@@ -41,6 +74,13 @@ const Index = () => {
       icon: FileHeart,
       gradient: 'bg-gradient-to-br from-success to-success/80',
       action: () => navigate('/visitas')
+    },
+    {
+      title: 'Roteiro IA',
+      subtitle: 'Planejamento inteligente',
+      icon: Route,
+      gradient: 'bg-gradient-to-br from-orange-600 to-red-600',
+      action: () => navigate('/planejamento-roteiro')
     },
     {
       title: 'Relatórios',
@@ -54,37 +94,36 @@ const Index = () => {
   const dashboardStats = [
     {
       title: 'Domicílios',
-      value: '85',
+      value: stats.domicilios.toString(),
       icon: Building,
       change: '+12%'
     },
     {
       title: 'Famílias',
-      value: '247',
+      value: stats.familias.toString(),
       icon: Users,
       change: '+8%'
     },
     {
       title: 'Indivíduos',
-      value: '892',
+      value: stats.individuos.toString(),
       icon: User,
       change: '+15%'
     },
     {
       title: 'Visitas',
-      value: '156',
+      value: stats.visitas.toString(),
       icon: Calendar,
       change: '+23%'
     }
   ];
 
-  const [showChatbot, setShowChatbot] = useState(false);
   if (!isMobile) {
     // Desktop layout (novo: botão I.A30 no grid, padrão dos outros)
     return (
       <div className="min-h-screen bg-background p-6">
-        {showChatbot && (
-          <ChatbotACS open={showChatbot} onOpenChange={setShowChatbot} />
+        {showAssistente && (
+          <AssistenteAvancado open={showAssistente} onOpenChange={setShowAssistente} />
         )}
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
@@ -179,7 +218,11 @@ const Index = () => {
               <Card key={index} className="cursor-pointer hover:shadow-soft transition-all duration-200 active:scale-95" onClick={module.action}>
                 <CardContent className="p-4">
                   <div className={`w-12 h-12 ${module.gradient} rounded-xl flex items-center justify-center mb-3 shadow-subtle`}>
-                    <module.icon className="w-6 h-6 text-white" />
+                    {module.isIA ? (
+                      <span className="text-white text-sm font-bold">I.A</span>
+                    ) : (
+                      module.icon && <module.icon className="w-6 h-6 text-white" />
+                    )}
                   </div>
                   <h3 className="font-medium text-foreground text-sm mb-1">{module.title}</h3>
                   <p className="text-xs text-muted-foreground">{module.subtitle}</p>
@@ -213,9 +256,9 @@ const Index = () => {
         </div>
       </div>
 
-      {/* ChatbotIA modal para mobile */}
-      {showChatbot && (
-        <ChatbotACS open={showChatbot} onOpenChange={setShowChatbot} />
+      {/* AssistenteAvancado modal para mobile */}
+      {showAssistente && (
+        <AssistenteAvancado open={showAssistente} onOpenChange={setShowAssistente} />
       )}
       {/* Mobile Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-2 safe-area-inset-bottom">
@@ -230,10 +273,10 @@ const Index = () => {
           </Button>
           {/* Botão I.A30 entre Cadastrar e Visitas */}
           <Button
-            onClick={() => setShowChatbot(true)}
+            onClick={() => setShowAssistente(true)}
             className="bg-gradient-to-br from-purple-600 to-blue-600 text-white rounded-full shadow-lg hover:scale-105 transition-all w-14 h-14 flex items-center justify-center border-4 border-blue-400 text-base font-bold mx-1"
             style={{ fontWeight: 700, fontSize: 16 }}
-            title="Abrir I.A30"
+            title="Abrir Assistente ACS"
           >
             I.A30
           </Button>

@@ -14,7 +14,7 @@ export function AppHeader() {
     <>
   <header className="flex items-center justify-between p-4 bg-primary text-primary-foreground sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <SidebarTrigger />
+          <SidebarTrigger className="hover:bg-primary-foreground/10 transition-colors" />
           <Button
             variant="ghost"
             size="sm" 
