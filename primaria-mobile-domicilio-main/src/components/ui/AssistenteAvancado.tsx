@@ -448,7 +448,7 @@ Escolha uma opção:`;
       categoria = 'visita';
       setEtapaAtual('dados-atendimento');
       setPacienteSelecionado({
-        nome: 'Carlos Mendonça',
+        nome: 'Carlos Mendonça da Silva',
         idade: 45,
         endereco: 'Conjunto Vila União, 123',
         condicoes: ['Hipertensão', 'AVC recente'],
@@ -1249,8 +1249,8 @@ Escolha uma opção abaixo para começar:`;
   }
 
   function salvarVisita() {
-    // Validações obrigatórias
-    if (!formularioVisita.paciente) {
+    // Validações obrigatórias - verificar se tem paciente selecionado ou pré-selecionado
+    if (!formularioVisita.paciente && !pacienteSelecionado) {
       const mensagemErro: MensagemIA = {
         id: Date.now().toString(),
         tipo: 'assistant',
@@ -1278,9 +1278,11 @@ Escolha uma opção abaixo para começar:`;
 
     // Salvar dados da visita
     const visitas = JSON.parse(localStorage.getItem('visitas') || '[]');
+    const pacienteNome = pacienteSelecionado ? pacienteSelecionado.nome : formularioVisita.paciente;
     const novaVisita = {
       id: Date.now().toString(),
       ...formularioVisita,
+      paciente: pacienteNome, // Usar o nome correto do paciente
       timestamp: new Date().toISOString(),
       status: 'concluida',
       etapa: 'atendimento_finalizado',
@@ -1310,7 +1312,7 @@ Escolha uma opção abaixo para começar:`;
       tipo: 'assistant',
       conteudo: `🎉 **ATENDIMENTO FINALIZADO COM SUCESSO!**
 
-**� PACIENTE:** ${formularioVisita.paciente}
+**� PACIENTE:** ${pacienteNome}
 **📅 DATA:** ${new Date(formularioVisita.data).toLocaleDateString('pt-BR')}  
 **⏰ HORA:** ${formularioVisita.hora}
 
